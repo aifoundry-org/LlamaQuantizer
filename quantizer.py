@@ -111,7 +111,7 @@ if __name__ == "__main__":
     quantization_keys = ["Q2_K", "Q3_K", "Q4_K", "Q5_K", "Q6_K", "Q8_0"]
 
     for q in quantization_keys:
-        quant_model_path = os.path.join(model_dir, "{}.{}.gguf".format(model_name, q))
+        quant_model_path = os.path.join(model_dir, "{}-{}.gguf".format(model_name, q))
 
         command = [
             binary_path,
