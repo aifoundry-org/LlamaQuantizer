@@ -27,6 +27,7 @@ def run_binary(cmd_list):
         print(f"Running command: {' '.join(command)}")
 
         # Start the process
+        start_time = time.time()
         process = subprocess.Popen(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
@@ -88,6 +89,7 @@ def run_binary(cmd_list):
                 mem_usage_avg, mem_usage_min, mem_usage_max
             )
         )
+        print("Execution time, s:  {:.3f}".format(time.time() - start_time))
         print(
             "————————————————————————————————————————————————————————————"
             + colorama.Style.RESET_ALL
@@ -99,28 +101,71 @@ def run_binary(cmd_list):
 if __name__ == "__main__":
 
     # args
-    convertion_path = "./llama.cpp/convert_hf_to_gguf.py"
-    binary_path = "./llama.cpp/build/bin/llama-quantize"
+    converter_path = "./llama.cpp/convert_hf_to_gguf.py"
+    imatrix_calc_path = "./llama.cpp/build/bin/llama-imatrix"
+    quantizer_path = "./llama.cpp/build/bin/llama-quantize"
     model_name = "OLMo-1B-hf-0724"
     model_dir = "./OLMo-1B-0724-hf/"
+    imatrix_text_name = "wikitext"
+    imatrix_text_path = "./wikitext/wikitext-2-raw-v1/train-00000-of-00001.txt"
+
+    cmd_list = []
 
     f16_model_path = os.path.join(model_dir, "{}-F16.gguf".format(model_name))
 
-    cmd_list = [["python3", convertion_path, model_dir]]
+    if not os.path.exists(f16_model_path):
+        gguf_conversion_cmd = ["python3", converter_path, model_dir]
+        cmd_list.append(gguf_conversion_cmd)
+    else:
+        colorama_init()
+        print(
+            colorama.Fore.YELLOW
+            + "File {} already exists, convert_hf_to_gguf is skipped".format(
+                f16_model_path
+            )
+            + colorama.Style.RESET_ALL
+        )
 
-    quantization_keys = ["Q2_K", "Q3_K", "Q4_K", "Q5_K", "Q6_K", "Q8_0"]
+    # ../llama.cpp/build/bin/llama-imatrix -m ./OLMo-1B-hf-0724-F16.gguf -f ../wikitext/wikitext-2-raw-v1/train-00000-of-00001.txt -o ./OLMo-1B-hf-0724.dat
+
+    imatrix_path = os.path.join(
+        model_dir, "{}-{}.dat".format(model_name, imatrix_text_name)
+    )
+
+    if not os.path.exists(imatrix_path):
+        imatrix_gen_cmd = [
+            imatrix_calc_path,
+            "-m",
+            f16_model_path,
+            "-f",
+            imatrix_text_path,
+            "-o",
+            imatrix_path,
+        ]
+        cmd_list.append(imatrix_gen_cmd)
+    else:
+        print(
+            colorama.Fore.YELLOW
+            + "File {} already exists, imatrix calculation path is skipped".format(
+                imatrix_path
+            )
+            + colorama.Style.RESET_ALL
+        )
+
+    # quantization_keys = ["Q2_K", "Q3_K", "Q4_K", "Q5_K", "Q6_K", "Q8_0"]
+    quantization_keys = ["IQ1_S", "IQ2_S", "IQ1_M", "IQ2_M"]
 
     for q in quantization_keys:
         quant_model_path = os.path.join(model_dir, "{}-{}.gguf".format(model_name, q))
 
         command = [
-            binary_path,
+            quantizer_path,
+            "--imatrix",
+            imatrix_path,
             f16_model_path,
             quant_model_path,
             q,
         ]
         cmd_list.append(command)
-
-    print(cmd_list)
 
     results = run_binary(cmd_list)
