@@ -22,10 +22,8 @@ IMATRIX_QUANT_KEY_LIST = [
 
 # Relative path to HF 2 GGUF converter in llamacpp repo
 HF_2_GGUF_PATH = "convert_hf_to_gguf.py"
-
 # Relative path to llama-imatrix binary in llamacpp repo
 IMATRIX_PATH = "build/bin/llama-imatrix"
-
 # Relative path to llama-quantize binary in llamacpp repo
 QUANTIZER_PATH = "build/bin/llama-quantize"
 
@@ -168,12 +166,47 @@ if __name__ == "__main__":
         help="List of quantization keys (with imatrix).",
     )
 
+    parser.add_argument(
+        "--hf_to_gguf_path",
+        type=str,
+        default=HF_2_GGUF_PATH,
+        help="Relative path to HF 2 GGUF converter in llamacpp repo.",
+    )
+
+    parser.add_argument(
+        "--llama_imatrix_path",
+        type=str,
+        default=IMATRIX_PATH,
+        help="Relative path to llama-imatrix binary in llamacpp repo.",
+    )
+
+    parser.add_argument(
+        "--llama_quantize_path",
+        type=str,
+        default=QUANTIZER_PATH,
+        help="Relative path to llama-quantize binary in llamacpp repo.",
+    )
+
     args = parser.parse_args()
 
-    if os.path.exists(args.llamacpp_path):
-        converter_path = os.path.join(args.llamacpp_path, HF_2_GGUF_PATH)
-        quantizer_path = os.path.join(args.llamacpp_path, QUANTIZER_PATH)
-        imatrix_calc_path = os.path.join(args.llamacpp_path, IMATRIX_PATH)
+    if not os.path.exists(args.llamacpp_path):
+        raise FileNotFoundError(
+            "No llamacpp repo found at {}".format(args.llamacpp_path)
+        )
+
+    converter_path = os.path.join(args.llamacpp_path, args.hf_to_gguf_path)
+    imatrix_calc_path = os.path.join(args.llamacpp_path, args.llama_imatrix_path)
+    quantizer_path = os.path.join(args.llamacpp_path, args.llama_quantize_path)
+    if not (
+        os.path.exists(converter_path)
+        and os.path.exists(imatrix_calc_path)
+        and os.path.exists(quantizer_path)
+    ):
+        raise FileNotFoundError(
+            "No binaries found at {}".format(
+                [converter_path, imatrix_calc_path, quantizer_path]
+            )
+        )
 
     cmd_list = []
 
