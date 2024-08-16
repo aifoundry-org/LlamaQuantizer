@@ -1,4 +1,4 @@
-# LlamaQuantizer
+# ✨ LlamaQuantizer ✨
 
 ## Automated Serial Quantization for LLaMA Models
 
