@@ -26,6 +26,8 @@ HF_2_GGUF_PATH = "convert_hf_to_gguf.py"
 IMATRIX_PATH = "build/bin/llama-imatrix"
 # Relative path to llama-quantize binary in llamacpp repo
 QUANTIZER_PATH = "build/bin/llama-quantize"
+# Relative path to sd binary in stable-diffusion.cpp repo
+SDCPP_PATH = "build/bin/sd"
 
 
 def monitor_process(pid):
@@ -117,86 +119,13 @@ def run_binary(cmd_list):
     return results
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run LLM quantizations")
+def compose_llamacpp_cmd_list(args):
+    if not os.path.exists(args.engine_path):
+        raise FileNotFoundError("No llamacpp repo found at {}".format(args.engine_path))
 
-    parser.add_argument(
-        "--use_imatrix",
-        action="store_true",
-        help="Use this flag to run imatrix calculation and related quantizations.",
-    )
-    parser.add_argument("--llamacpp_path", type=str, help="Path to built llamacpp repo")
-    parser.add_argument(
-        "--model_name",
-        type=str,
-        default="OLMo-7B-SFT-hf-0724",
-        help="Name of the model.",
-    )
-    parser.add_argument(
-        "--model_dir",
-        type=str,
-        help="Directory containing the model in format of HF repo.",
-    )
-    parser.add_argument(
-        "--imatrix_text_name",
-        type=str,
-        default=None,
-        help="Name of the text for imatrix calculation.",
-    )
-    parser.add_argument(
-        "--imatrix_data_path",
-        type=str,
-        default=None,
-        help="Path to the .txt file for imatrix calculation.",
-    )
-
-    parser.add_argument(
-        "--quant_keys",
-        type=str,
-        nargs="+",
-        default=SIMPLE_QUANT_KEY_LIST,
-        help="List of quantization keys (without imatrix).",
-    )
-
-    parser.add_argument(
-        "--imatrix_quant_keys",
-        type=str,
-        nargs="+",
-        default=IMATRIX_QUANT_KEY_LIST,
-        help="List of quantization keys (with imatrix).",
-    )
-
-    parser.add_argument(
-        "--hf_to_gguf_path",
-        type=str,
-        default=HF_2_GGUF_PATH,
-        help="Relative path to HF 2 GGUF converter in llamacpp repo.",
-    )
-
-    parser.add_argument(
-        "--llama_imatrix_path",
-        type=str,
-        default=IMATRIX_PATH,
-        help="Relative path to llama-imatrix binary in llamacpp repo.",
-    )
-
-    parser.add_argument(
-        "--llama_quantize_path",
-        type=str,
-        default=QUANTIZER_PATH,
-        help="Relative path to llama-quantize binary in llamacpp repo.",
-    )
-
-    args = parser.parse_args()
-
-    if not os.path.exists(args.llamacpp_path):
-        raise FileNotFoundError(
-            "No llamacpp repo found at {}".format(args.llamacpp_path)
-        )
-
-    converter_path = os.path.join(args.llamacpp_path, args.hf_to_gguf_path)
-    imatrix_calc_path = os.path.join(args.llamacpp_path, args.llama_imatrix_path)
-    quantizer_path = os.path.join(args.llamacpp_path, args.llama_quantize_path)
+    converter_path = os.path.join(args.engine_path, args.hf_to_gguf_path)
+    imatrix_calc_path = os.path.join(args.engine_path, args.llama_imatrix_path)
+    quantizer_path = os.path.join(args.engine_path, args.llama_quantize_path)
     if not (
         os.path.exists(converter_path)
         and os.path.exists(imatrix_calc_path)
@@ -285,5 +214,136 @@ if __name__ == "__main__":
                 q,
             ]
             cmd_list.append(command)
+    return cmd_list
+
+
+def compose_sdcpp_cmd_list(args):
+    ##  ./build/bin/sd -M convert -m ../FLUX.1-schnell/flux1-schnell.safetensors -o ../FLUX.1-schnell/flux1-schnell-F16.gguf -v --type f16
+    cmd_list = []
+
+    sdcpp_path = os.path.join(args.engine_path, args.scdpp_path)
+    if not os.path.exists(sdcpp_path):
+        raise FileNotFoundError("No binary found at {}".format(sdcpp_path))
+
+    input_path = os.path.join(args.model_dir, "{}.safetensors".format(args.model_name))
+    if not os.path.exists(input_path):
+        raise FileNotFoundError("No files found at {}".format(input_path))
+
+    for q in args.quant_keys:
+        output_path = os.path.join(
+            args.model_dir, "{}-{}.gguf".format(args.model_name, q)
+        )
+        output_type = q.lower()
+        command = [
+            sdcpp_path,
+            "-M",
+            "convert",
+            "-m",
+            input_path,
+            "-o",
+            output_path,
+            "--type",
+            output_type,
+            "-v",
+        ]
+        cmd_list.append(command)
+
+    return cmd_list
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run LLM quantizations")
+
+    parser.add_argument(
+        "--engine",
+        choices=["llamacpp", "sdcpp"],
+        required=True,
+        default="llamacpp",
+        help="Choose the engine to use: 'llamacpp' or 'sdcpp'.",
+    )
+    parser.add_argument(
+        "--use_imatrix",
+        action="store_true",
+        help="Use this flag to run imatrix calculation and related quantizations.",
+    )
+    parser.add_argument(
+        "--engine_path", type=str, help="Path to built llamacpp or sdcpp repo"
+    )
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        default="OLMo-7B-SFT-hf-0724",
+        help="Name of the model.",
+    )
+    parser.add_argument(
+        "--model_dir",
+        type=str,
+        help="Directory containing the model in format of HF repo.",
+    )
+    parser.add_argument(
+        "--imatrix_text_name",
+        type=str,
+        default=None,
+        help="Name of the text for imatrix calculation.",
+    )
+    parser.add_argument(
+        "--imatrix_data_path",
+        type=str,
+        default=None,
+        help="Path to the .txt file for imatrix calculation.",
+    )
+
+    parser.add_argument(
+        "--quant_keys",
+        type=str,
+        nargs="+",
+        default=SIMPLE_QUANT_KEY_LIST,
+        help="List of quantization keys (without imatrix).",
+    )
+
+    parser.add_argument(
+        "--imatrix_quant_keys",
+        type=str,
+        nargs="+",
+        default=IMATRIX_QUANT_KEY_LIST,
+        help="List of quantization keys (with imatrix).",
+    )
+
+    parser.add_argument(
+        "--hf_to_gguf_path",
+        type=str,
+        default=HF_2_GGUF_PATH,
+        help="Relative path to HF 2 GGUF converter in llamacpp repo.",
+    )
+
+    parser.add_argument(
+        "--llama_imatrix_path",
+        type=str,
+        default=IMATRIX_PATH,
+        help="Relative path to llama-imatrix binary in llamacpp repo.",
+    )
+
+    parser.add_argument(
+        "--llama_quantize_path",
+        type=str,
+        default=QUANTIZER_PATH,
+        help="Relative path to llama-quantize binary in llamacpp repo.",
+    )
+
+    parser.add_argument(
+        "--scdpp_path",
+        type=str,
+        default=SDCPP_PATH,
+        help="Relative path to sd binary in stable-diffusion.cpp repo.",
+    )
+
+    args = parser.parse_args()
+
+    if args.engine == "llamacpp":
+        cmd_list = compose_llamacpp_cmd_list(args)
+    elif args.engine == "sdcpp":
+        cmd_list = compose_sdcpp_cmd_list(args)
+    else:
+        raise NotImplementedError("No implemetation for {}".format(args.engine))
 
     _ = run_binary(cmd_list)
