@@ -2,7 +2,7 @@
 
 ## Automated Serial Quantization for LLaMA Models
 
-**LlamaQuantizer** is a lightweight tool built on top of [llama.cpp](https://github.com/ggerganov/llama.cpp) that simplifies the process of serial quantizing llama.cpp-supported models. With just a few steps, you can create quantized model set like [OLMo-1B-0724-hf-Quantized](https://huggingface.co/aifoundry-org/OLMo-1B-0724-hf-Quantized).
+**LlamaQuantizer** is a lightweight tool built on top of [llama.cpp](https://github.com/ggerganov/llama.cpp) and [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp) that simplifies the process of serial quantizing llama.cpp-supported models. With just a few steps, you can create quantized model set like [OLMo-1B-0724-hf-Quantized](https://huggingface.co/aifoundry-org/OLMo-1B-0724-hf-Quantized).
 
 
 ## How it Works
@@ -29,14 +29,14 @@ pip install -r ./requirements.txt
 5. Download huggingface repo like this one: [OLMo-1B-0724-hf](https://huggingface.co/allenai/OLMo-1B-0724-hf)
 4. Run `quantizer.py` with correct paths to your cloned hf model repo with model and installed llamacpp repo:
 ```
- ./quantizer.py --llamacpp_path ../llama.cpp/ --model_name OLMo-7B-SFT-hf-0724 --model_dir ../OLMo-7B-0724-SFT-hf/
+ ./quantizer.py --engine llamacpp --llamacpp_path ../llama.cpp/ --model_name OLMo-7B-SFT-hf-0724 --model_dir ../OLMo-7B-0724-SFT-hf/
 ```
 
 ## Example with importance matrix
 To make 1-bit and some of 2-bit quantizations, you need to calulate and use an *importance matrix* LlamaQuantizer can handle it! This is the example with importance matrix:
 
 ```
-./quantizer.py --llamacpp_path ../llama.cpp/ --model_name OLMo-7B-SFT-hf-0724 --model_dir ../OLMo-7B-0724-SFT-hf/--imatrix_text_name wikitext --imatrix_data_path ../wikitext/wikitext-2-raw-v1/train-00000-of-00001.txt
+./quantizer.py --engine llamacpp --llamacpp_path ../llama.cpp/ --model_name OLMo-7B-SFT-hf-0724 --model_dir ../OLMo-7B-0724-SFT-hf/--imatrix_text_name wikitext --imatrix_data_path ../wikitext/wikitext-2-raw-v1/train-00000-of-00001.txt
 ```
 
 ## Quantized model sets created or updated with this tool:
@@ -48,6 +48,8 @@ To make 1-bit and some of 2-bit quantizations, you need to calulate and use an *
 * [OLMo-7B-0724-Instruct-hf-Quantized](https://huggingface.co/aifoundry-org/OLMo-7B-0724-Instruct-hf-Quantized)
 * [OLMo-7B-0724-SFT-hf-Quantized](https://huggingface.co/aifoundry-org/OLMo-7B-0724-SFT-hf-Quantized)
 * [OLMo-7B-0424-hf-Quantized](https://huggingface.co/aifoundry-org/OLMo-7B-0424-hf-Quantized)
+#### FLUX
+* [FLUX.1-schnell-Quantized](https://huggingface.co/aifoundry-org/FLUX.1-schnell-Quantized)
 
 
 ## Contributing

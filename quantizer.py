@@ -218,7 +218,6 @@ def compose_llamacpp_cmd_list(args):
 
 
 def compose_sdcpp_cmd_list(args):
-    ##  ./build/bin/sd -M convert -m ../FLUX.1-schnell/flux1-schnell.safetensors -o ../FLUX.1-schnell/flux1-schnell-F16.gguf -v --type f16
     cmd_list = []
 
     sdcpp_path = os.path.join(args.engine_path, args.scdpp_path)
