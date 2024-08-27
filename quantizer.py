@@ -101,11 +101,6 @@ def run_binary(cmd_list):
 
         print(colorama.Fore.YELLOW + f"Completed command: {' '.join(command)}")
         print(
-            "CPU usage (avg/min/max): {:.2f} {:.2f} {:.2f}".format(
-                cpu_usage_avg, cpu_usage_min, cpu_usage_max
-            )
-        )
-        print(
             "Memory usage, GB (avg/min/max): {:.3f} {:.3f} {:.3f}".format(
                 mem_usage_avg, mem_usage_min, mem_usage_max
             )
