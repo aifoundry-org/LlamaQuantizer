@@ -34,11 +34,10 @@ def monitor_process(pid):
     try:
         p = psutil.Process(pid)
         with p.oneshot():
-            cpu_usage = p.cpu_percent(interval=1)
             memory_info = p.memory_info()
-            return cpu_usage, memory_info.rss / (1024**3)  # bytes to GB
+            return memory_info.rss / (1024**3)  # bytes to GB
     except psutil.NoSuchProcess:
-        return None, None
+        return None
 
 
 def run_binary(cmd_list):
@@ -53,16 +52,15 @@ def run_binary(cmd_list):
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
 
-        cpu_usage, mem_usage = [], []
+        mem_usage = []
         stdout_lines = []
         stderr_lines = []
 
         # Read stdout and stderr in real-time
         while True:
-            # Monitor process CPU and memory usage
-            cpu, mem = monitor_process(process.pid)
-            if cpu is not None:
-                cpu_usage.append(cpu)
+            # Monitor process memory usage
+            mem = monitor_process(process.pid)
+            if mem is not None:
                 mem_usage.append(mem)
 
             # Read output from stdout and stderr
@@ -86,14 +84,9 @@ def run_binary(cmd_list):
         result = {
             "stdout": "".join(stdout_lines),
             "stderr": "".join(stderr_lines),
-            "cpu_usage": cpu_usage,
             "mem_usage": mem_usage,
         }
         results.append(result)
-
-        cpu_usage_avg = sum(cpu_usage) / len(cpu_usage) if cpu_usage else 0.0
-        cpu_usage_min = min(cpu_usage) if cpu_usage else 0.0
-        cpu_usage_max = max(cpu_usage) if cpu_usage else 0.0
 
         mem_usage_avg = sum(mem_usage) / len(mem_usage) if mem_usage else 0.0
         mem_usage_min = min(mem_usage) if mem_usage else 0.0
