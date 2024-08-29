@@ -104,8 +104,6 @@ def run_binary(cmd_list):
             + colorama.Style.RESET_ALL
         )
 
-    return results
-
 
 def compose_llamacpp_cmd_list(args):
     if not os.path.exists(args.engine_path):
@@ -333,4 +331,4 @@ if __name__ == "__main__":
     else:
         raise NotImplementedError("No implemetation for {}".format(args.engine))
 
-    _ = run_binary(cmd_list)
+    run_binary(cmd_list)
